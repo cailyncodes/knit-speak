@@ -147,7 +147,7 @@ const Home: NextPage = () => {
         setError(error);
         setText(undefined);
       }
-    } catch (e) {
+    } catch (e: any) {
       setError(e.message);
       setText(undefined);
     }
