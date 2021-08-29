@@ -16,7 +16,7 @@ export default function handler(
     const patternSpeechData = convertToText(knittingPattern, colorA, colorB);
 
     res.status(200).json(patternSpeechData);
-  } catch (e) {
+  } catch (e: any) {
     res.status(400).json({ error: e.message });
   }
 }
