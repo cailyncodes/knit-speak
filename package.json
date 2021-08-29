@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "csv-reader": "^1.0.8",
     "next": "11.1.0",
+    "nosleep.js": "^0.12.0",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "speak-tts": "^2.0.8"

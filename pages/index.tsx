@@ -3,6 +3,7 @@ import Head from "next/head";
 import Image from "next/image";
 import React, { useCallback, useEffect, useState } from "react";
 import Speech from "speak-tts";
+import NoSleep from "nosleep.js";
 import styles from "../styles/Home.module.css";
 
 const sleep = (seconds: number): Promise<void> => {
@@ -22,6 +23,9 @@ type TextLine = {
 };
 
 const Home: NextPage = () => {
+  const [noSleep, setNoSleep] = useState<any>();
+  const [isLocked, setIsLocked] = useState<boolean>(false);
+  const [screenLockMessge, setScreenLockMessage] = useState<string>("");
   const [speech, setSpeech] = useState<any>();
   const [isSupported, setIsSupported] = useState<boolean>();
   const [speechOptions, setSpeechOptions] = useState<any[]>();
@@ -60,6 +64,7 @@ const Home: NextPage = () => {
       setSpeechOptions(speechData.voices);
       setLanguage(speechData.voices[0].lang);
       setIsSupported(speech.hasBrowserSupport());
+      setNoSleep(new NoSleep());
     };
 
     init();
@@ -122,6 +127,20 @@ const Home: NextPage = () => {
       play();
     }
   }, [text, currentState, textIndex, speak, delay]);
+
+  const handleScreenLock = async () => {
+    if (noSleep) {
+      if (!isLocked) {
+        await noSleep.enable();
+        setIsLocked(true);
+        setScreenLockMessage("Screen will not go to sleep");
+      } else {
+        await noSleep.disable();
+        setIsLocked(false);
+        setScreenLockMessage("");
+      }
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files ? e.target.files[0] : undefined;
@@ -315,6 +334,17 @@ const Home: NextPage = () => {
                 />
                 <p>Current delay: {delay}</p>
               </div>
+              {screenLockMessge && (
+                <div style={{ marginBottom: "10px" }}>{screenLockMessge}</div>
+              )}
+              <button
+                id="screen-lock"
+                name="screen-lock"
+                onClick={handleScreenLock}
+              >
+                {!isLocked ? "Prevent" : "Allow"} screen sleep
+              </button>
+              <br />
               <br />
               <div>
                 <label htmlFor="language">Language: </label>
@@ -362,7 +392,8 @@ const Home: NextPage = () => {
           </div>
         )}
         <div className={styles.grid}>
-          <div>
+          <div style={{ textAlign: "center" }}>
+            <h2>File Upload</h2>
             <label htmlFor="file">File:</label>
             <span> </span>
             <input
