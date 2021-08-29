@@ -6,7 +6,7 @@ import {
 } from "../types/knitting";
 
 export default function parseFileData(fileData: string): KnittingPattern {
-  const rowsData = fileData.split("\n").filter((row) => row);
+  const rowsData = fileData.split(new RegExp(/[\n\r]+/)).filter((row) => row);
   const inverseRowsData = [...rowsData].reverse();
   const cellsData = inverseRowsData.map((inverseRowData) =>
     inverseRowData.split(",")

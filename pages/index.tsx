@@ -25,7 +25,7 @@ const Home: NextPage = () => {
   const [speech, setSpeech] = useState<any>();
   const [isSupported, setIsSupported] = useState<boolean>();
   const [speechOptions, setSpeechOptions] = useState<any[]>();
-  const [language] = useState<string>("en-US");
+  const [language, setLanguage] = useState<string>();
   const [voice, setVoice] = useState<string>();
 
   const [colorA, setColorA] = useState<string>();
@@ -38,6 +38,8 @@ const Home: NextPage = () => {
   const [delay, setDelay] = useState<number>(2);
 
   const [currentState, setCurrentState] = useState<SpeakState>("unstarted");
+
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     const init = async () => {
@@ -54,9 +56,9 @@ const Home: NextPage = () => {
           },
         },
       });
-
       setSpeech(speech);
       setSpeechOptions(speechData.voices);
+      setLanguage(speechData.voices[0].lang);
       setIsSupported(speech.hasBrowserSupport());
     };
 
@@ -127,18 +129,28 @@ const Home: NextPage = () => {
   };
 
   const handleSubmit = async () => {
-    const textResponse = await fetch("/api/file-to-text", {
-      method: "POST",
-      headers: {
-        "x-knitspeak-color-a": colorA ?? "",
-        "x-knitspeak-color-b": colorB ?? "",
-      },
-      body: file,
-    });
+    try {
+      const textResponse = await fetch("/api/file-to-text", {
+        method: "POST",
+        headers: {
+          "x-knitspeak-color-a": colorA ?? "",
+          "x-knitspeak-color-b": colorB ?? "",
+        },
+        body: file,
+      });
 
-    const { text } = await textResponse.json();
-
-    setText(text);
+      if (textResponse.status === 200) {
+        const { text } = await textResponse.json();
+        setText(text);
+      } else {
+        const { error } = await textResponse.json();
+        setError(error);
+        setText(undefined);
+      }
+    } catch (e) {
+      setError(e.message);
+      setText(undefined);
+    }
 
     return false;
   };
@@ -305,15 +317,39 @@ const Home: NextPage = () => {
               </div>
               <br />
               <div>
-                <label htmlFor="voice">Voice: </label>
-                <select onChange={handleSpeechOption} name="voice">
+                <label htmlFor="language">Language: </label>
+                <select
+                  onChange={(e) =>
+                    setLanguage(e.target.selectedOptions[0]?.value)
+                  }
+                  name="language"
+                >
                   {speechOptions
-                    ?.filter((speechOption) => speechOption.lang === language)
-                    .map((speechOption, i) => (
-                      <option key={i} value={speechOption.voiceURI}>
-                        {speechOption.name}
+                    ?.reduce<string[]>((langs, speechOption) => {
+                      return langs.includes(speechOption.lang)
+                        ? langs
+                        : [...langs, speechOption.lang];
+                    }, [])
+                    .map((lang, i) => (
+                      <option key={i} value={lang}>
+                        {lang}
                       </option>
                     ))}
+                </select>
+              </div>
+              <br />
+              <div>
+                <label htmlFor="voice">Voice: </label>
+                <select onChange={handleSpeechOption} name="voice">
+                  {speechOptions?.map((speechOption, i) => (
+                    <option
+                      key={i}
+                      value={speechOption.voiceURI}
+                      hidden={speechOption.lang !== language}
+                    >
+                      {speechOption.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -361,6 +397,7 @@ const Home: NextPage = () => {
             </div>
           </div>
         </div>
+        {error && <p>{error}</p>}
       </main>
 
       <footer className={styles.footer}>
